@@ -7,7 +7,7 @@ import HomePage from './pages/homepage/homepage.component';
 import ShopPage from './pages/shop/shop.component'; 
 import SignInAndSignOutPage from './pages/sign-in-and-sign-out/sign-in-and-sign-out.component';
 import Header from './components/header/header.component';
-import { auth } from './firebase/firebase.utils';
+import { auth, createUserProfileDocument } from './firebase/firebase.utils';
 
 class App extends Component {
   constructor(){
@@ -21,15 +21,34 @@ class App extends Component {
 
   componentDidMount(){
     const that = this;
-    this.unSubcribeFroAuth = auth.onAuthStateChanged(function(user){
-      that.setState({currentUser : user});
-      console.log(user);
-    })
+    this.unSubcribeFroAuth = auth.onAuthStateChanged(async function(userAuth){
+      if(userAuth){
+        const userRef = await createUserProfileDocument(userAuth);
+
+        userRef.onSnapshot(function(snapShot){
+            that.setState({
+              currentUser:{
+                id: snapShot.id,
+                /*displayName: snapShot.data().displayName,
+                email: snapShot.data().email,
+                createdAt: snapShot.data().createdAt*/
+                ...snapShot.data()
+              }
+            }, function(){
+              console.log(that.state);
+            })
+            
+        });
+
+      } else{
+        that.setState({currentUser: userAuth});
+      }
+    });
   }
   
   componentWillUnmount(){
     this.unSubcribeFroAuth();
-  }
+  } 
 
   render(){
     return (
